@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 // 사이드바 컴포넌트
 function Sidebar() {
