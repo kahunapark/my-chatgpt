@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { openai } from '@/utils/openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 // 사이드바 컴포넌트
@@ -65,27 +64,34 @@ function ChatInterface() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: ChatCompletionMessageParam = { role: 'user', content: input };
+    const userMessage = { role: 'user', content: input };
     setMessages(prev => [...prev, { role: 'user', content: input }]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const completion = await openai.chat.completions.create({
-        messages: [
-          { role: 'system', content: 'You are a helpful assistant.' },
-          ...messages.map(msg => ({ role: msg.role, content: msg.content })),
-          userMessage,
-        ],
-        model: 'gpt-4',
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+        }),
       });
 
-      const assistantMessage = completion.choices[0]?.message;
-      if (assistantMessage) {
-        setMessages(prev => [...prev, { role: 'assistant', content: assistantMessage.content || '' }]);
+      if (!response.ok) {
+        throw new Error('API request failed');
       }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
     } catch (error) {
-      console.error('OpenAI API Error:', error);
+      console.error('Chat API Error:', error);
       setMessages(prev => [...prev, { role: 'assistant', content: '죄송합니다. 오류가 발생했습니다. 다시 시도해 주세요.' }]);
     } finally {
       setIsLoading(false);
