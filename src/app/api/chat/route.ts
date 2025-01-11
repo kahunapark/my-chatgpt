@@ -1,6 +1,10 @@
 import { OpenAI } from 'openai';
 import { NextResponse } from 'next/server';
 
+type ErrorWithMessage = {
+  message?: string;
+};
+
 export async function POST(req: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
@@ -44,11 +48,12 @@ export async function POST(req: Request) {
       role: 'assistant',
       content: reply.content
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('OpenAI API Error:', error);
     
     // API 키 관련 에러 처리
-    if (error?.message?.includes('API key')) {
+    const err = error as ErrorWithMessage;
+    if (err?.message?.includes('API key')) {
       return NextResponse.json(
         { error: 'Invalid API key configuration' },
         { status: 500 }
